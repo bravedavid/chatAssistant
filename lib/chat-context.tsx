@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Chat, ContactInfo, ChatSettings, Message, Role } from './types';
+import { loadChats, saveChats } from './storage';
 
 const ChatContext = createContext<{
   chats: Chat[];
@@ -22,23 +23,38 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from local storage
+  // Load from storage (AndroidFileStorage or localStorage)
   useEffect(() => {
-    const savedChats = localStorage.getItem('chat_ai_chats');
-    if (savedChats) {
+    const loadData = async () => {
       try {
-        setChats(JSON.parse(savedChats));
+        const savedChats = await loadChats();
+        if (savedChats) {
+          setChats(savedChats);
+        }
       } catch (e) {
-        console.error("Failed to parse chats", e);
+        console.error("Failed to load chats", e);
+      } finally {
+        setIsLoaded(true);
       }
-    }
-    setIsLoaded(true);
+    };
+    loadData();
   }, []);
 
-  // Save to local storage
+  // Save to storage (AndroidFileStorage or localStorage)
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('chat_ai_chats', JSON.stringify(chats));
+      const saveData = async () => {
+        try {
+          const result = await saveChats(chats);
+          if (!result.success && result.error) {
+            console.warn('Failed to save chats:', result.error);
+            // 可以在这里显示错误提示给用户
+          }
+        } catch (e) {
+          console.error("Failed to save chats", e);
+        }
+      };
+      saveData();
     }
   }, [chats, isLoaded]);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, Key, Check, AlertCircle, ExternalLink } from 'lucide-react';
+import { X, Key, Check, AlertCircle, ExternalLink, Database, HardDrive } from 'lucide-react';
 import { 
   APIConfig, 
   ModelProvider, 
@@ -9,6 +9,7 @@ import {
   getAPIConfig, 
   saveAPIConfig 
 } from '@/lib/api-config';
+import { storage, StorageInfo } from '@/lib/storage';
 
 interface APISettingsProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export function APISettings({ isOpen, onClose }: APISettingsProps) {
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+  const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -33,6 +35,13 @@ export function APISettings({ isOpen, onClose }: APISettingsProps) {
       }
       setIsSaved(false);
       setTestResult(null);
+      
+      // 加载存储信息
+      const loadStorageInfo = async () => {
+        const info = await storage.getStorageInfo();
+        setStorageInfo(info);
+      };
+      loadStorageInfo();
     }
   }, [isOpen]);
 
@@ -248,6 +257,62 @@ export function APISettings({ isOpen, onClose }: APISettingsProps) {
             <div className="p-3 rounded-lg bg-green-50 text-green-700 border border-green-200 flex items-center gap-2">
               <Check size={18} />
               <span>设置已保存</span>
+            </div>
+          )}
+
+          {/* Storage Info */}
+          {storageInfo && (
+            <div className={`p-4 rounded-lg border ${
+              storageInfo.type === 'android' 
+                ? 'bg-green-50 border-green-200' 
+                : 'bg-amber-50 border-amber-200'
+            }`}>
+              <div className="flex items-start gap-3">
+                {storageInfo.type === 'android' ? (
+                  <HardDrive size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <Database size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-sm font-semibold ${
+                      storageInfo.type === 'android' ? 'text-green-800' : 'text-amber-800'
+                    }`}>
+                      {storageInfo.type === 'android' ? 'Android 文件存储' : '浏览器本地存储'}
+                    </span>
+                    {storageInfo.type === 'android' && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                        无限制
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs space-y-1">
+                    <div className={`${storageInfo.type === 'android' ? 'text-green-700' : 'text-amber-700'}`}>
+                      <span className="font-medium">已使用：</span>
+                      {(storageInfo.totalSize / 1024).toFixed(2)} KB
+                      {storageInfo.type === 'localStorage' && storageInfo.limitSize && (
+                        <span> / {(storageInfo.limitSize / 1024 / 1024).toFixed(0)} MB</span>
+                      )}
+                    </div>
+                    <div className={`${storageInfo.type === 'android' ? 'text-green-600' : 'text-amber-600'}`}>
+                      <span className="font-medium">文件数：</span>
+                      {storageInfo.fileCount}
+                    </div>
+                    {storageInfo.type === 'localStorage' && (
+                      <div className="text-amber-700 mt-2 pt-2 border-t border-amber-200">
+                        <AlertCircle size={14} className="inline mr-1" />
+                        <span className="font-medium">注意：</span>
+                        <span>localStorage 有约 5MB 的大小限制，建议在 Android 应用中查看以获得无限制存储</span>
+                      </div>
+                    )}
+                    {storageInfo.type === 'android' && storageInfo.directory && (
+                      <div className="text-green-600 mt-1 text-[10px] font-mono break-all">
+                        存储路径：{storageInfo.directory}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
