@@ -14,6 +14,7 @@ interface ChatRequest {
   };
   history: Array<{ role: string; content: string }>;
   lastMessage: string;
+  userFeedback?: string; // 用户建议或反馈
   apiConfig?: {
     provider: ModelProvider;
     apiKey: string;
@@ -24,7 +25,7 @@ interface ChatRequest {
 
 export async function POST(req: Request) {
   try {
-    const { contactInfo, settings, history, lastMessage, apiConfig }: ChatRequest = await req.json();
+    const { contactInfo, settings, history, lastMessage, userFeedback, apiConfig }: ChatRequest = await req.json();
 
     // If no API config provided, return mock suggestions
     if (!apiConfig || !apiConfig.apiKey) {
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
 
 用户希望的回复风格：${Array.isArray(settings.style) ? settings.style.join('、') : settings.style}
 ${settings.customPrompt ? `额外要求：${settings.customPrompt}` : ''}
+${userFeedback ? `用户特别建议：${userFeedback}` : ''}
 
 请根据对话历史和对方最新消息，生成3个不同的回复建议：
 1. 一个标准/安全的回复
@@ -55,6 +57,7 @@ ${settings.customPrompt ? `额外要求：${settings.customPrompt}` : ''}
 3. 一个简短精炼的回复
 
 所有回复都要完美匹配"${Array.isArray(settings.style) ? settings.style.join('、') : settings.style}"的语气风格。
+${userFeedback ? `特别注意：${userFeedback}` : ''}
 只返回JSON格式：{"suggestions": ["回复1", "回复2", "回复3"]}`;
 
     const historyText = history.length > 0 

@@ -18,6 +18,7 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasAPIKey, setHasAPIKey] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [userFeedback, setUserFeedback] = useState(''); // 用户建议输入
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get suggestions from activeChat
@@ -41,6 +42,7 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
   useEffect(() => {
     setInputText('');
     setCopiedIndex(null);
+    setUserFeedback(''); // 切换对话时清空建议输入
   }, [activeChatId]);
 
   const handleCopy = async (text: string, index: number) => {
@@ -72,7 +74,7 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
     clearSuggestions(activeChatId); // Clear suggestions after sending
   };
 
-  const generateSuggestions = async (lastMessage: string) => {
+  const generateSuggestions = async (lastMessage: string, feedback?: string) => {
     if (!activeChatId) return;
     
     setIsGenerating(true);
@@ -90,6 +92,7 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
           history: activeChat?.messages || [],
           contactInfo: activeChat?.contactInfo,
           settings: activeChat?.settings,
+          userFeedback: feedback || undefined, // 传递用户建议
           apiConfig: apiConfig
         })
       });
@@ -117,7 +120,7 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
       .find(msg => msg.role === 'contact');
     
     if (lastContactMessage) {
-      await generateSuggestions(lastContactMessage.content);
+      await generateSuggestions(lastContactMessage.content, userFeedback.trim() || undefined);
     } else {
       alert('没有找到对方的消息，无法刷新建议');
     }
@@ -220,12 +223,24 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
                 onClick={handleRefreshSuggestions}
                 disabled={isGenerating}
                 className="flex items-center gap-1.5 px-2 py-1 text-xs text-purple-700 hover:text-purple-900 hover:bg-purple-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="刷新建议"
+                title={userFeedback.trim() ? "根据您的建议重新生成" : "刷新建议"}
               >
                 <RefreshCw size={12} className={isGenerating ? "animate-spin" : ""} />
-                <span>刷新</span>
+                <span>{userFeedback.trim() ? "再来一次" : "刷新"}</span>
               </button>
             </div>
+            
+            {/* User Feedback Input */}
+            <div className="mb-3">
+              <input
+                type="text"
+                value={userFeedback}
+                onChange={(e) => setUserFeedback(e.target.value)}
+                placeholder="💡 输入您的建议或要求（如：更简短一些、更正式一点...）"
+                className="w-full px-3 py-2.5 text-sm border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white text-gray-900 placeholder-gray-400 shadow-sm hover:border-purple-300 transition-colors"
+              />
+            </div>
+            
             <div className="space-y-2">
               {suggestions.map((suggestion, idx) => (
                 <div
