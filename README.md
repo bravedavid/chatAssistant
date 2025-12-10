@@ -68,6 +68,63 @@ npm run build
 npm start
 ```
 
+### Cloudflare Workers 部署
+
+本项目已配置为支持部署到 Cloudflare Workers。
+
+#### 前置要求
+
+- Cloudflare 账号（免费注册：https://dash.cloudflare.com）
+- 已安装项目依赖（`npm install`）
+
+#### 部署步骤
+
+**方法一：命令行部署（推荐首次部署）**
+
+1. **登录 Cloudflare**（首次部署需要）
+   ```bash
+   npx wrangler login
+   ```
+   这会打开浏览器，登录你的 Cloudflare 账号。
+
+2. **部署应用**
+   ```bash
+   npm run deploy
+   ```
+   这个命令会：
+   - 构建 Next.js 应用
+   - 转换为 Cloudflare Workers 格式
+   - 自动部署到 Cloudflare
+
+3. **部署完成后**，你会得到一个 `*.workers.dev` 的 URL，你的应用就可以通过这个 URL 访问了。
+
+**方法二：GitHub/GitLab 自动部署（持续集成）**
+
+1. 在 [Cloudflare Dashboard](https://dash.cloudflare.com) 中：
+   - 进入 **Workers & Pages**
+   - 创建新项目，选择 **"Connect to Git"**
+   - 选择你的 GitHub/GitLab 仓库
+
+2. 配置构建设置：
+   - **Build command**: `npm run build`
+   - **Build output directory**: `.open-next`
+   - **Root directory**: `/`（项目根目录）
+
+3. 每次推送到主分支会自动部署。
+
+#### 本地预览（Workers 运行时）
+
+如果你想在本地使用 Cloudflare Workers 运行时预览应用（更接近生产环境）：
+
+```bash
+npm run preview
+```
+
+#### 其他有用的命令
+
+- `npm run upload` - 构建并上传新版本到 Cloudflare（不立即部署）
+- `npm run cf-typegen` - 生成 Cloudflare 类型定义文件
+
 ## 🔧 配置
 
 ### API 设置
