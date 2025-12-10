@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.80",
-    "@opennextjs/cloudflare": "latest",
+    "@opennextjs/cloudflare": "^1.14.4",
     "ai": "^5.0.108",
     "clsx": "^2.1.1",
     "lucide-react": "^0.556.0",
@@ -33,6 +33,6 @@
     "eslint-config-next": "16.0.7",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "wrangler": "latest"
+    "wrangler": "^4.53.0"
   }
 }
