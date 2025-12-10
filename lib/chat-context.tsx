@@ -29,7 +29,20 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       try {
         const savedChats = await loadChats();
         if (savedChats) {
-          setChats(savedChats);
+          // Migrate old data: convert string style to array
+          const migratedChats = savedChats.map((chat: Chat) => {
+            if (chat.settings && typeof chat.settings.style === 'string') {
+              return {
+                ...chat,
+                settings: {
+                  ...chat.settings,
+                  style: [chat.settings.style]
+                }
+              };
+            }
+            return chat;
+          });
+          setChats(migratedChats);
         }
       } catch (e) {
         console.error("Failed to load chats", e);

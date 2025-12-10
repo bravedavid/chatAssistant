@@ -9,7 +9,7 @@ export interface ContactInfo {
 }
 
 export interface ChatSettings {
-  style: string; // e.g., "幽默", "成熟", "调皮"
+  style: string[]; // e.g., ["幽默", "成熟", "调皮"]
   customPrompt?: string;
 }
 

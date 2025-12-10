@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useChat } from '@/lib/chat-context';
-import { Send, Sparkles, Settings, Menu, ArrowDown, AlertCircle, Copy, Check } from 'lucide-react';
+import { Send, Sparkles, Settings, Menu, ArrowDown, AlertCircle, Copy, Check, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getAPIConfig } from '@/lib/api-config';
 
@@ -108,6 +108,21 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
     }
   };
 
+  const handleRefreshSuggestions = async () => {
+    if (!activeChatId || !activeChat) return;
+    
+    // 找到最后一条来自 contact 的消息
+    const lastContactMessage = [...activeChat.messages]
+      .reverse()
+      .find(msg => msg.role === 'contact');
+    
+    if (lastContactMessage) {
+      await generateSuggestions(lastContactMessage.content);
+    } else {
+      alert('没有找到对方的消息，无法刷新建议');
+    }
+  };
+
   if (!activeChat) {
      return <div className="flex-1 flex items-center justify-center text-gray-500">请选择一个对话</div>;
   }
@@ -127,7 +142,7 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
         <div className="flex-1 min-w-0">
           <h2 className="font-bold text-lg text-gray-900 truncate">{activeChat.contactInfo.name}</h2>
           <div className="text-xs text-gray-600 truncate">
-            {[activeChat.contactInfo.age, activeChat.contactInfo.job, activeChat.settings.style].filter(Boolean).join(' · ')}
+            {[activeChat.contactInfo.age, activeChat.contactInfo.job, Array.isArray(activeChat.settings.style) ? activeChat.settings.style.join('、') : activeChat.settings.style].filter(Boolean).join(' · ')}
           </div>
         </div>
         
@@ -196,9 +211,20 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
         {/* Suggestions Area */}
         {!isGenerating && suggestions.length > 0 && (
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-100">
-            <div className="text-xs font-semibold text-purple-700 flex items-center gap-1.5 mb-3">
-              <Sparkles size={14} />
-              AI 推荐回复（点击使用，或复制到其他应用）
+            <div className="text-xs font-semibold text-purple-700 flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                <Sparkles size={14} />
+                AI 推荐回复（点击使用，或复制到其他应用）
+              </div>
+              <button
+                onClick={handleRefreshSuggestions}
+                disabled={isGenerating}
+                className="flex items-center gap-1.5 px-2 py-1 text-xs text-purple-700 hover:text-purple-900 hover:bg-purple-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="刷新建议"
+              >
+                <RefreshCw size={12} className={isGenerating ? "animate-spin" : ""} />
+                <span>刷新</span>
+              </button>
             </div>
             <div className="space-y-2">
               {suggestions.map((suggestion, idx) => (

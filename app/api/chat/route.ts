@@ -9,7 +9,7 @@ interface ChatRequest {
     relationship: string;
   };
   settings: {
-    style: string;
+    style: string | string[]; // Support both for backward compatibility
     customPrompt?: string;
   };
   history: Array<{ role: string; content: string }>;
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 - 背景：${contactInfo.background || '无'}
 - 关系：${contactInfo.relationship || '未知'}
 
-用户希望的回复风格：${settings.style}
+用户希望的回复风格：${Array.isArray(settings.style) ? settings.style.join('、') : settings.style}
 ${settings.customPrompt ? `额外要求：${settings.customPrompt}` : ''}
 
 请根据对话历史和对方最新消息，生成3个不同的回复建议：
@@ -54,7 +54,7 @@ ${settings.customPrompt ? `额外要求：${settings.customPrompt}` : ''}
 2. 一个更有创意或大胆的回复（符合风格设定）
 3. 一个简短精炼的回复
 
-所有回复都要完美匹配"${settings.style}"的语气风格。
+所有回复都要完美匹配"${Array.isArray(settings.style) ? settings.style.join('、') : settings.style}"的语气风格。
 只返回JSON格式：{"suggestions": ["回复1", "回复2", "回复3"]}`;
 
     const historyText = history.length > 0 

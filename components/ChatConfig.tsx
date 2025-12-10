@@ -20,12 +20,37 @@ export function ChatConfig({ initialInfo, initialSettings, onSubmit, onCancel, i
     relationship: ''
   });
 
-  const [settings, setSettings] = useState<ChatSettings>(initialSettings || {
-    style: '幽默',
-    customPrompt: ''
+  const [settings, setSettings] = useState<ChatSettings>(() => {
+    if (initialSettings) {
+      // Handle backward compatibility: convert string to array if needed
+      return {
+        ...initialSettings,
+        style: Array.isArray(initialSettings.style) 
+          ? initialSettings.style 
+          : (initialSettings.style ? [initialSettings.style] : ['幽默'])
+      };
+    }
+    return {
+      style: ['幽默'],
+      customPrompt: ''
+    };
   });
 
   const styles = ['幽默', '成熟', '调皮', '温柔', '专业', '高冷', '直接', '委婉'];
+
+  // Handle backward compatibility: convert string to array if needed
+  const currentStyles = Array.isArray(settings.style) ? settings.style : (settings.style ? [settings.style] : ['幽默']);
+
+  const toggleStyle = (style: string) => {
+    const newStyles = currentStyles.includes(style)
+      ? currentStyles.filter(s => s !== style)
+      : [...currentStyles, style];
+    
+    // Ensure at least one style is selected
+    if (newStyles.length > 0) {
+      setSettings({ ...settings, style: newStyles });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +58,12 @@ export function ChatConfig({ initialInfo, initialSettings, onSubmit, onCancel, i
       alert('请输入对方名称');
       return;
     }
-    onSubmit(info, settings);
+    // Ensure style is an array before submitting
+    const normalizedSettings = {
+      ...settings,
+      style: Array.isArray(settings.style) ? settings.style : (settings.style ? [settings.style] : ['幽默'])
+    };
+    onSubmit(info, normalizedSettings);
   };
 
   return (
@@ -119,15 +149,15 @@ export function ChatConfig({ initialInfo, initialSettings, onSubmit, onCancel, i
             <h3 className="text-base font-semibold text-gray-900">回复风格</h3>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">选择风格</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">选择风格（可多选）</label>
               <div className="flex flex-wrap gap-2">
                 {styles.map(s => (
                   <button
                     key={s}
                     type="button"
-                    onClick={() => setSettings({ ...settings, style: s })}
+                    onClick={() => toggleStyle(s)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      settings.style === s
+                      currentStyles.includes(s)
                         ? 'bg-blue-600 text-white shadow-sm'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300'
                     }`}
@@ -136,6 +166,9 @@ export function ChatConfig({ initialInfo, initialSettings, onSubmit, onCancel, i
                   </button>
                 ))}
               </div>
+              {currentStyles.length === 0 && (
+                <p className="text-xs text-amber-600 mt-1">请至少选择一个风格</p>
+              )}
             </div>
 
             <div>

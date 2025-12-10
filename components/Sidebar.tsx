@@ -100,7 +100,7 @@ export function Sidebar({ onNewChat, isOpen, onClose, onOpenAPISettings }: Sideb
                     <div className="overflow-hidden">
                       <div className="truncate font-medium">{chat.title}</div>
                       <div className="text-xs text-gray-500 truncate">
-                        {chat.contactInfo.relationship || chat.settings.style}
+                        {chat.contactInfo.relationship || (Array.isArray(chat.settings.style) ? chat.settings.style.join('、') : chat.settings.style)}
                       </div>
                     </div>
                   </div>
