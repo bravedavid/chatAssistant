@@ -1,4 +1,4 @@
-export type ModelProvider = 'openai' | 'openrouter' | 'anthropic' | 'deepseek' | 'moonshot';
+export type ModelProvider = 'openai' | 'openrouter' | 'anthropic' | 'deepseek' | 'moonshot' | 'custom';
 
 export interface ModelOption {
   id: string;
@@ -11,6 +11,8 @@ export interface APIConfig {
   apiKey: string;
   model: string;
   baseUrl?: string;
+  // For custom SSE provider
+  token?: string; // TOKEN for custom SSE API
 }
 
 export const PROVIDERS: Record<ModelProvider, { name: string; baseUrl: string; models: ModelOption[] }> = {
@@ -64,6 +66,13 @@ export const PROVIDERS: Record<ModelProvider, { name: string; baseUrl: string; m
       { id: 'moonshot-v1-8k', name: 'Moonshot v1 8K', provider: 'moonshot' },
       { id: 'moonshot-v1-32k', name: 'Moonshot v1 32K', provider: 'moonshot' },
       { id: 'moonshot-v1-128k', name: 'Moonshot v1 128K', provider: 'moonshot' },
+    ]
+  },
+  custom: {
+    name: '自定义 SSE 接口',
+    baseUrl: '', // 用户自定义
+    models: [
+      { id: 'custom-sse', name: '自定义 SSE', provider: 'custom' },
     ]
   }
 };

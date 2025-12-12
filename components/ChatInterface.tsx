@@ -97,11 +97,27 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
         })
       });
       
-      if (!response.ok) throw new Error('Failed to fetch suggestions');
-      
       const data = await response.json();
+      
+      // Check for payment required error (402) - show alert but still set suggestions
+      if (data.error === 'PAYMENT_REQUIRED') {
+        alert(data.message || '金币不足，请充值');
+        // Still set suggestions if available, so user can continue after recharging
+        if (data.suggestions && Array.isArray(data.suggestions)) {
+          setSuggestions(activeChatId, data.suggestions);
+        }
+        return;
+      }
+      
+      // Check for other errors
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions');
+      }
+      
       if (data.suggestions && Array.isArray(data.suggestions)) {
         setSuggestions(activeChatId, data.suggestions);
+      } else {
+        throw new Error('Invalid response format');
       }
     } catch (error) {
       console.error(error);

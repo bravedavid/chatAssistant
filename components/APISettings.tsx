@@ -56,9 +56,20 @@ export function APISettings({ isOpen, onClose }: APISettingsProps) {
   };
 
   const handleSave = () => {
-    if (!config.apiKey.trim()) {
-      alert('请输入 API Key');
-      return;
+    if (config.provider === 'custom') {
+      if (!config.baseUrl?.trim()) {
+        alert('请输入 Base URL');
+        return;
+      }
+      if (!config.token?.trim()) {
+        alert('请输入 Token');
+        return;
+      }
+    } else {
+      if (!config.apiKey.trim()) {
+        alert('请输入 API Key');
+        return;
+      }
     }
     saveAPIConfig(config);
     setIsSaved(true);
@@ -148,20 +159,21 @@ export function APISettings({ isOpen, onClose }: APISettingsProps) {
           </div>
 
           {/* API Key Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              API Key
-            </label>
-            <input
-              type="password"
-              value={config.apiKey}
-              onChange={(e) => {
-                setConfig({ ...config, apiKey: e.target.value });
-                setTestResult(null);
-              }}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
-              placeholder={`输入你的 ${providerInfo.name} API Key`}
-            />
+          {config.provider !== 'custom' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                API Key
+              </label>
+              <input
+                type="password"
+                value={config.apiKey}
+                onChange={(e) => {
+                  setConfig({ ...config, apiKey: e.target.value });
+                  setTestResult(null);
+                }}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
+                placeholder={`输入你的 ${providerInfo.name} API Key`}
+              />
             
             {/* Provider specific hints */}
             <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
@@ -198,6 +210,7 @@ export function APISettings({ isOpen, onClose }: APISettingsProps) {
               )}
             </div>
           </div>
+          )}
 
           {/* Model Selection */}
           <div>
@@ -217,19 +230,38 @@ export function APISettings({ isOpen, onClose }: APISettingsProps) {
             </select>
           </div>
 
-          {/* Custom Base URL (optional) */}
+          {/* Custom Base URL */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              自定义 Base URL <span className="text-gray-400 font-normal">（可选，用于代理）</span>
+              {config.provider === 'custom' ? 'Base URL' : '自定义 Base URL'} 
+              <span className="text-gray-400 font-normal">{config.provider === 'custom' ? '（必填）' : '（可选，用于代理）'}</span>
             </label>
             <input
               type="text"
               value={config.baseUrl || ''}
               onChange={(e) => setConfig({ ...config, baseUrl: e.target.value || undefined })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
-              placeholder={providerInfo.baseUrl}
+              placeholder={config.provider === 'custom' ? 'https://your-api.com' : providerInfo.baseUrl}
+              required={config.provider === 'custom'}
             />
           </div>
+
+          {/* Token for custom SSE provider */}
+          {config.provider === 'custom' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Token <span className="text-gray-400 font-normal">（必填）</span>
+              </label>
+              <input
+                type="password"
+                value={config.token || ''}
+                onChange={(e) => setConfig({ ...config, token: e.target.value || undefined })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
+                placeholder="输入您的 Token"
+                required
+              />
+            </div>
+          )}
 
           {/* Test Result */}
           {testResult && (
@@ -322,7 +354,7 @@ export function APISettings({ isOpen, onClose }: APISettingsProps) {
           <button
             type="button"
             onClick={handleTest}
-            disabled={isLoading || !config.apiKey.trim()}
+            disabled={isLoading || (config.provider === 'custom' ? (!config.baseUrl?.trim() || !config.token?.trim()) : !config.apiKey.trim())}
             className="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors font-medium"
           >
             {isLoading ? '测试中...' : '测试连接'}
@@ -330,7 +362,7 @@ export function APISettings({ isOpen, onClose }: APISettingsProps) {
           <button
             type="button"
             onClick={handleSave}
-            disabled={!config.apiKey.trim()}
+            disabled={config.provider === 'custom' ? (!config.baseUrl?.trim() || !config.token?.trim()) : !config.apiKey.trim()}
             className="flex-1 bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
           >
             保存设置
