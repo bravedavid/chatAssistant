@@ -76,6 +76,8 @@ ${historyText}
     const baseUrl = apiConfig.baseUrl || providerConfig.baseUrl;
 
     let suggestions: string[] = [];
+    let analysis: string | undefined;
+    let referenceCases: string | undefined;
 
     if (apiConfig.provider === 'custom') {
       // Custom SSE API - no system prompt, pass all info directly in request body
@@ -212,31 +214,93 @@ ${historyText}
         }
       }
 
+      // Debug: log the full content to see what we're parsing
+      console.log('=== Full Content Debug ===');
+      console.log('Full content length:', fullContent.length);
+      console.log('Full content preview (first 500 chars):', fullContent.substring(0, 500));
+      console.log('Full content ends with:', fullContent.substring(Math.max(0, fullContent.length - 200)));
+      
       // Parse JSON from full content
+      let llmResponse: string | null = null;
+      
       try {
         const parsed = JSON.parse(fullContent.trim());
-        suggestions = parsed.suggestions || [];
-      } catch {
-        // Try to extract JSON from the response
-        const jsonMatch = fullContent.match(/\{[\s\S]*"suggestions"[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            const parsed = JSON.parse(jsonMatch[0]);
-            suggestions = parsed.suggestions || [];
-          } catch {
-            // Fallback: try to extract suggestions from text
-            const lines = fullContent.split('\n').filter(l => l.trim());
-            if (lines.length >= 3) {
-              suggestions = lines.slice(0, 3);
-            }
-          }
-        } else {
-          // If no JSON found, try to extract suggestions from text
-          const lines = fullContent.split('\n').filter(l => l.trim());
-          if (lines.length >= 3) {
-            suggestions = lines.slice(0, 3);
+        console.log('Successfully parsed as JSON');
+        console.log('Parsed keys:', Object.keys(parsed));
+        
+        // Check for custom SSE format with llm_response
+        if (parsed.llm_response) {
+          llmResponse = parsed.llm_response;
+          console.log('Found llm_response in JSON');
+        } else if (parsed.suggestions) {
+          // Standard format
+          suggestions = parsed.suggestions || [];
+        }
+      } catch (e) {
+        // If not JSON, treat fullContent as llm_response directly
+        console.log('Not JSON format, treating as plain text llm_response');
+        llmResponse = fullContent.trim();
+      }
+      
+      // Parse llm_response if we have it
+      if (llmResponse) {
+        // Extract analysis section (局势分析) - stop at next ### section or end
+        const analysisMatch = llmResponse.match(/### 🧠 局势分析\n([\s\S]*?)(?=\n### |$)/);
+        if (analysisMatch && analysisMatch[1]) {
+          const extractedAnalysis = analysisMatch[1].trim();
+          // Remove any trailing newlines and clean up
+          analysis = extractedAnalysis.replace(/\n+$/, '').trim();
+        }
+        
+        // Extract reference cases section (参考案例) - stop at next ### section or end
+        const referenceCasesMatch = llmResponse.match(/### 📚 参考案例\n([\s\S]*?)(?=\n### |$)/);
+        if (referenceCasesMatch && referenceCasesMatch[1]) {
+          const extractedCases = referenceCasesMatch[1].trim();
+          // Remove any trailing newlines and clean up
+          referenceCases = extractedCases.replace(/\n+$/, '').trim();
+        }
+        
+        // Extract suggestions from 推荐回复 section only
+        const suggestionsMatch = llmResponse.match(/### 💬 推荐回复\n([\s\S]*?)(?=\n### |$)/);
+        if (suggestionsMatch && suggestionsMatch[1]) {
+          const suggestionsText = suggestionsMatch[1].trim();
+          // Parse numbered list: "1. 你好呀\n2. 嘿，你好\n3. 嗨，很高兴认识你"
+          const suggestionLines = suggestionsText.split('\n').filter((line: string) => {
+            const trimmed = line.trim();
+            // Only include lines that start with a number followed by a dot
+            return trimmed && /^\d+\.\s+/.test(trimmed);
+          });
+          
+          suggestions = suggestionLines.map((line: string) => {
+            // Remove numbering like "1. ", "2. ", etc.
+            return line.replace(/^\d+\.\s*/, '').trim();
+          }).filter((s: string) => s.length > 0);
+        }
+        
+        // Fallback: if no suggestions found in 推荐回复 section, try to find numbered list anywhere
+        if (suggestions.length === 0) {
+          // Try to find numbered list, but exclude lines that are part of analysis
+          const numberedListMatch = llmResponse.match(/(?:^|\n)(\d+\.\s+[^\n]+(?:\n\d+\.\s+[^\n]+)*)/);
+          if (numberedListMatch) {
+            const listText = numberedListMatch[1];
+            const lines = listText.split('\n').filter((line: string) => {
+              const trimmed = line.trim();
+              return trimmed && /^\d+\.\s+/.test(trimmed);
+            });
+            suggestions = lines.map((line: string) => {
+              return line.replace(/^\d+\.\s*/, '').trim();
+            }).filter((s: string) => s.length > 0);
           }
         }
+        
+        // Debug logging
+        console.log('=== Custom SSE Parsing Debug ===');
+        console.log('Full llm_response length:', llmResponse.length);
+        console.log('Analysis found:', !!analysis);
+        console.log('Analysis content:', analysis ? analysis.substring(0, 100) : 'none');
+        console.log('Suggestions count:', suggestions.length);
+        console.log('Suggestions:', suggestions);
+        console.log('===============================');
       }
     } else if (apiConfig.provider === 'anthropic') {
       // Anthropic Claude API
@@ -324,7 +388,11 @@ ${historyText}
       ];
     }
 
-    return Response.json({ suggestions });
+    return Response.json({ 
+      suggestions,
+      ...(analysis && { analysis }),
+      ...(referenceCases && { referenceCases })
+    });
 
   } catch (error) {
     console.error('Chat API Error:', error);

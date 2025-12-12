@@ -14,7 +14,7 @@ const ChatContext = createContext<{
   addMessage: (chatId: string, role: Role, content: string) => void;
   deleteChat: (id: string) => void;
   clearHistory: (chatId: string) => void;
-  setSuggestions: (chatId: string, suggestions: string[]) => void;
+  setSuggestions: (chatId: string, suggestions: string[], analysis?: string, referenceCases?: string) => void;
   clearSuggestions: (chatId: string) => void;
 } | undefined>(undefined);
 
@@ -146,12 +146,14 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       }));
   }
 
-  const setSuggestions = (chatId: string, suggestions: string[]) => {
+  const setSuggestions = (chatId: string, suggestions: string[], analysis?: string, referenceCases?: string) => {
     setChats(prev => prev.map(chat => {
       if (chat.id === chatId) {
         return {
           ...chat,
-          suggestions
+          suggestions,
+          ...(analysis && { analysis }),
+          ...(referenceCases && { referenceCases })
         };
       }
       return chat;
@@ -163,7 +165,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       if (chat.id === chatId) {
         return {
           ...chat,
-          suggestions: []
+          suggestions: [],
+          analysis: undefined,
+          referenceCases: undefined
         };
       }
       return chat;

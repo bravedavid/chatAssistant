@@ -27,11 +27,15 @@ export interface Chat {
   settings: ChatSettings;
   messages: Message[];
   suggestions?: string[]; // AI generated reply suggestions
+  analysis?: string; // AI analysis of the situation
+  referenceCases?: string; // 参考案例
   createdAt: number;
   updatedAt: number;
 }
 
 export interface AIResponse {
   suggestions: string[];
+  analysis?: string; // 局势分析
+  referenceCases?: string; // 参考案例
 }
 

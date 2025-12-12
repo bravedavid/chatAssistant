@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useChat } from '@/lib/chat-context';
-import { Send, Sparkles, Settings, Menu, ArrowDown, AlertCircle, Copy, Check, RefreshCw } from 'lucide-react';
+import { Send, Sparkles, Settings, Menu, ArrowDown, AlertCircle, Copy, Check, RefreshCw, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getAPIConfig } from '@/lib/api-config';
 
@@ -21,8 +21,10 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
   const [userFeedback, setUserFeedback] = useState(''); // 用户建议输入
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get suggestions from activeChat
+  // Get suggestions, analysis and reference cases from activeChat
   const suggestions = activeChat?.suggestions || [];
+  const analysis = activeChat?.analysis;
+  const referenceCases = activeChat?.referenceCases;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -104,7 +106,7 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
         alert(data.message || '金币不足，请充值');
         // Still set suggestions if available, so user can continue after recharging
         if (data.suggestions && Array.isArray(data.suggestions)) {
-          setSuggestions(activeChatId, data.suggestions);
+          setSuggestions(activeChatId, data.suggestions, data.analysis, data.referenceCases);
         }
         return;
       }
@@ -115,7 +117,13 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
       }
       
       if (data.suggestions && Array.isArray(data.suggestions)) {
-        setSuggestions(activeChatId, data.suggestions);
+        // Debug logging
+        console.log('=== Frontend Debug ===');
+        console.log('Received suggestions:', data.suggestions);
+        console.log('Received analysis:', data.analysis);
+        console.log('Received referenceCases:', data.referenceCases);
+        console.log('=====================');
+        setSuggestions(activeChatId, data.suggestions, data.analysis, data.referenceCases);
       } else {
         throw new Error('Invalid response format');
       }
@@ -245,6 +253,32 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
                 <span>{userFeedback.trim() ? "再来一次" : "刷新"}</span>
               </button>
             </div>
+            
+            {/* Analysis Section */}
+            {analysis && (
+              <div className="mb-4 p-3 bg-white/80 rounded-lg border border-purple-200">
+                <div className="text-xs font-semibold text-purple-700 mb-2 flex items-center gap-1.5">
+                  <Sparkles size={12} />
+                  局势分析
+                </div>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {analysis}
+                </div>
+              </div>
+            )}
+            
+            {/* Reference Cases Section */}
+            {referenceCases && (
+              <div className="mb-4 p-3 bg-white/80 rounded-lg border border-purple-200">
+                <div className="text-xs font-semibold text-purple-700 mb-2 flex items-center gap-1.5">
+                  <BookOpen size={12} />
+                  参考案例
+                </div>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {referenceCases}
+                </div>
+              </div>
+            )}
             
             {/* User Feedback Input */}
             <div className="mb-3">
