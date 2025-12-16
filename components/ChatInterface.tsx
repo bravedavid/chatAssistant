@@ -19,6 +19,7 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
   const [hasAPIKey, setHasAPIKey] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [userFeedback, setUserFeedback] = useState(''); // 用户建议输入
+  const [showDeleteButton, setShowDeleteButton] = useState<string | null>(null); // 显示删除按钮的消息ID
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get suggestions, analysis and reference cases from activeChat
@@ -45,7 +46,24 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
     setInputText('');
     setCopiedIndex(null);
     setUserFeedback(''); // 切换对话时清空建议输入
+    setShowDeleteButton(null); // 清空删除按钮状态
   }, [activeChatId]);
+
+  // 点击外部区域关闭删除按钮（移动端）
+  useEffect(() => {
+    if (!showDeleteButton) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // 如果点击的不是消息气泡或删除按钮，关闭删除按钮
+      if (!target.closest('.message-bubble') && !target.closest('.delete-button')) {
+        setShowDeleteButton(null);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showDeleteButton]);
 
   const handleCopy = async (text: string, index: number) => {
     try {
@@ -212,11 +230,22 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
             <div className="relative flex items-start gap-2">
               <div
                 className={cn(
-                  "max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-2.5",
+                  "max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-2.5 message-bubble",
                   msg.role === 'user'
                     ? 'bg-blue-600 text-white rounded-br-sm'
-                    : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm shadow-sm',
+                  // 移动端：点击消息可显示删除按钮
+                  "md:cursor-default"
                 )}
+                onClick={(e) => {
+                  // 移动端：点击消息切换删除按钮显示
+                  e.stopPropagation();
+                  if (showDeleteButton === msg.id) {
+                    setShowDeleteButton(null);
+                  } else {
+                    setShowDeleteButton(msg.id);
+                  }
+                }}
               >
                 <div className="whitespace-pre-wrap break-words">{msg.content}</div>
                 <div className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-400'}`}>
@@ -224,15 +253,23 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
                 </div>
               </div>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (confirm('确定要删除这条消息吗？')) {
                     deleteMessage(activeChatId!, msg.id);
+                    setShowDeleteButton(null);
                   }
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all flex-shrink-0 mt-1"
+                className={cn(
+                  "delete-button p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 active:text-red-500 active:bg-red-50 rounded transition-all flex-shrink-0 mt-1",
+                  // 桌面端：hover 显示
+                  "md:opacity-0 md:group-hover:opacity-100",
+                  // 移动端：根据点击状态显示
+                  showDeleteButton === msg.id ? "opacity-100" : "opacity-0 md:opacity-0"
+                )}
                 title="删除消息"
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} className="md:w-3.5 md:h-3.5" />
               </button>
             </div>
           </div>
