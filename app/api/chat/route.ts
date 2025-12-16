@@ -61,8 +61,31 @@ ${userFeedback ? `用户特别建议：${userFeedback}` : ''}
 ${userFeedback ? `特别注意：${userFeedback}` : ''}
 只返回JSON格式：{"suggestions": ["回复1", "回复2", "回复3"]}`;
 
-    const historyText = history.length > 0 
-      ? history.slice(-10).map((m) => `${m.role === 'user' ? '我' : contactInfo.name}: ${m.content}`).join('\n')
+    // Limit history: keep recent messages but limit total character count
+    // Strategy: Keep last 30 messages OR messages within last 3000 characters (whichever is more restrictive)
+    const MAX_HISTORY_MESSAGES = 30;
+    const MAX_HISTORY_CHARS = 3000;
+    
+    let limitedHistory = history;
+    if (history.length > MAX_HISTORY_MESSAGES) {
+      limitedHistory = history.slice(-MAX_HISTORY_MESSAGES);
+    }
+    
+    // Further limit by character count (count backwards from the end)
+    let charCount = 0;
+    const finalHistory: typeof history = [];
+    for (let i = limitedHistory.length - 1; i >= 0; i--) {
+      const msg = limitedHistory[i];
+      const msgText = `${msg.role === 'user' ? '我' : contactInfo.name}: ${msg.content}`;
+      if (charCount + msgText.length > MAX_HISTORY_CHARS && finalHistory.length > 0) {
+        break;
+      }
+      finalHistory.unshift(msg);
+      charCount += msgText.length;
+    }
+    
+    const historyText = finalHistory.length > 0 
+      ? finalHistory.map((m) => `${m.role === 'user' ? '我' : contactInfo.name}: ${m.content}`).join('\n')
       : '（暂无历史消息）';
 
     const userPrompt = `对方最新消息：${lastMessage}
@@ -85,8 +108,8 @@ ${historyText}
         throw new Error('Base URL and Token are required for custom SSE provider');
       }
 
-      // Convert history to messages format
-      const historyMessages = history.map(msg => ({
+      // Convert history to messages format (use limited history)
+      const historyMessages = finalHistory.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'assistant',
         content: msg.content
       }));

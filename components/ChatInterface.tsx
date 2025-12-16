@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useChat } from '@/lib/chat-context';
-import { Send, Sparkles, Settings, Menu, ArrowDown, AlertCircle, Copy, Check, RefreshCw, BookOpen } from 'lucide-react';
+import { Send, Sparkles, Settings, Menu, ArrowDown, AlertCircle, Copy, Check, RefreshCw, BookOpen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getAPIConfig } from '@/lib/api-config';
 
@@ -13,7 +13,7 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }: ChatInterfaceProps) {
-  const { activeChat, addMessage, activeChatId, setSuggestions, clearSuggestions } = useChat();
+  const { activeChat, addMessage, activeChatId, setSuggestions, clearSuggestions, deleteMessage } = useChat();
   const [inputText, setInputText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasAPIKey, setHasAPIKey] = useState(false);
@@ -207,20 +207,33 @@ export function ChatInterface({ onEditConfig, onOpenSidebar, onOpenAPISettings }
         {activeChat.messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group`}
           >
-            <div
-              className={cn(
-                "max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-2.5",
-                msg.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-sm'
-                  : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm shadow-sm'
-              )}
-            >
-              <div className="whitespace-pre-wrap break-words">{msg.content}</div>
-              <div className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-400'}`}>
-                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <div className="relative flex items-start gap-2">
+              <div
+                className={cn(
+                  "max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-2.5",
+                  msg.role === 'user'
+                    ? 'bg-blue-600 text-white rounded-br-sm'
+                    : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm shadow-sm'
+                )}
+              >
+                <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                <div className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-400'}`}>
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
               </div>
+              <button
+                onClick={() => {
+                  if (confirm('确定要删除这条消息吗？')) {
+                    deleteMessage(activeChatId!, msg.id);
+                  }
+                }}
+                className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all flex-shrink-0 mt-1"
+                title="删除消息"
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
           </div>
         ))}

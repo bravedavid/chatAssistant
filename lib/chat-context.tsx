@@ -12,6 +12,7 @@ const ChatContext = createContext<{
   selectChat: (id: string | null) => void;
   updateChatConfig: (id: string, contactInfo: ContactInfo, settings: ChatSettings) => void;
   addMessage: (chatId: string, role: Role, content: string) => void;
+  deleteMessage: (chatId: string, messageId: string) => void;
   deleteChat: (id: string) => void;
   clearHistory: (chatId: string) => void;
   setSuggestions: (chatId: string, suggestions: string[], analysis?: string, referenceCases?: string) => void;
@@ -125,6 +126,19 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const deleteMessage = (chatId: string, messageId: string) => {
+    setChats(prev => prev.map(chat => {
+      if (chat.id === chatId) {
+        return {
+          ...chat,
+          messages: chat.messages.filter(msg => msg.id !== messageId),
+          updatedAt: Date.now()
+        };
+      }
+      return chat;
+    }));
+  };
+
   const deleteChat = (id: string) => {
     setChats(prev => prev.filter(c => c.id !== id));
     if (activeChatId === id) {
@@ -183,6 +197,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       selectChat,
       updateChatConfig,
       addMessage,
+      deleteMessage,
       deleteChat,
       clearHistory,
       setSuggestions,
