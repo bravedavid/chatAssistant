@@ -36,6 +36,7 @@ export const PROVIDERS: Record<ModelProvider, { name: string; baseUrl: string; m
       { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openrouter' },
       { id: 'google/gemini-pro-1.5', name: 'Gemini Pro 1.5', provider: 'openrouter' },
       { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', provider: 'openrouter' },
+      { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', provider: 'openrouter' },
       { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'openrouter' },
       { id: 'meta-llama/llama-3.1-70b-instruct', name: 'Llama 3.1 70B', provider: 'openrouter' },
       { id: 'deepseek/deepseek-chat', name: 'DeepSeek Chat', provider: 'openrouter' },
